@@ -3,25 +3,43 @@ const mysql = require("mysql2");
 const cors = require("cors");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+}));
 app.use(express.json());
 
-// MySQL connection — these env vars will come from K8s secrets/configmap
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+// MySQL connection — env vars come from Docker / K8s
+function createDb() {
+  return mysql.createConnection({
+    host:     process.env.DB_HOST     || "mysql-service",
+    user:     process.env.DB_USER     || "root",
+    password: process.env.DB_PASSWORD || "root123",
+    database: process.env.DB_NAME     || "resultdb",
+  });
+}
 
-db.connect((err) => {
-  if (err) {
-    console.error("DB connection failed:", err.message);
-  } else {
-    console.log("Connected to MySQL");
-    seedDatabase();
-  }
-});
+let db;
+
+// Retry connection — MySQL may not be ready immediately
+function connectWithRetry(retries = 10, delay = 5000) {
+  db = createDb();
+  db.connect((err) => {
+    if (err) {
+      console.error(`DB connection failed (${retries} retries left): ${err.message}`);
+      if (retries === 0) {
+        console.error("Could not connect to MySQL. Exiting.");
+        process.exit(1);
+      }
+      setTimeout(() => connectWithRetry(retries - 1, delay), delay);
+    } else {
+      console.log("Connected to MySQL ✅");
+      seedDatabase();
+    }
+  });
+}
+
+connectWithRetry();
 
 // Seed sample student data
 function seedDatabase() {

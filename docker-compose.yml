@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   mysql:
     image: mysql:8
     container_name: mysql
@@ -13,6 +12,12 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 5s       # check every 5 seconds
+      timeout: 5s        # wait max 5s for response
+      retries: 10        # try 10 times before giving up
+      start_period: 20s  # give MySQL 20s to boot before checking
 
   backend:
     build: ./backend
@@ -25,7 +30,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy   # ← waits until MySQL passes healthcheck
 
   frontend:
     build: ./frontend

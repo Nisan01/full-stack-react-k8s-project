@@ -83,9 +83,11 @@ export default function App() {
       {/* ── Header ── */}
       <header className="app-header">
         <div className="header-inner">
-          <Emblem size={44} onClick={route}/>
+          <div onClick={handleReset} className="header-logo-btn" title="Go to home">
+            <Emblem size={44} />
+          </div>
           <div>
-            <h1 className="header-title">NATIONAL EXAMINATION BOARD</h1>
+            <h1 className="header-title" onClick={handleReset} style={{cursor:"pointer"}} title="Go to home">NATIONAL EXAMINATION BOARD</h1>
             <p className="header-sub">Online Result Verification Portal — Grade X / SEE</p>
           </div>
         </div>
@@ -100,7 +102,7 @@ export default function App() {
 
             {/* Sidebar emblem */}
             {splitView && (
-              <div className="side-emblem">
+              <div className="side-emblem" onClick={handleReset} title="Go to home">
                 <Emblem size={46} />
                 <div className="side-emblem-text">NEB PORTAL</div>
               </div>
